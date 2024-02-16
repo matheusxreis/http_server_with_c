@@ -5,17 +5,18 @@
 #include<stdlib.h>
 #include<arpa/inet.h>
 #include<string.h>
-#include"http.c"
+#include"http_server/http.c"
 
 void listen_server(char* host, int port){
 
+ while(1){
   int s;   /// socket
   int ns; // socket connected to client
   int namelen; // length of client name 
   struct sockaddr_in server; // me
   struct sockaddr_in client; // client
 
-  char buf[12];
+  char buf[100];
 
   struct sockaddr_in ddserver;
 
@@ -33,15 +34,13 @@ void listen_server(char* host, int port){
   if(bind(s, (struct sockaddr *)&server, sizeof(server)) < 0){
     printf("err in binding");
     exit(3);
-  }else {
-    printf("Binded....\n");
   }
 
   /* listening */
   if(listen(s, 10)!=0){
     printf("err in listen");
   }else {
-    printf("Listening......\n");
+    printf("******* ^----^ ********\n ****** WELCOME ******\nServer is listening in %s:%d\n", host, port);
   }
 
   /* accepting connection */
@@ -54,33 +53,14 @@ void listen_server(char* host, int port){
 
     char str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &client.sin_addr, str, INET_ADDRSTRLEN);
-    printf("Accepted.... %s has connected\n", str);
+    printf("%s has connected\n", str);
   }
-
-  /* receiving message */
-    if(recv(ns, buf, sizeof(buf), 0)==-1) {
-      printf("err receiving...");
-      exit(6);
-    }
-    
-     struct ReadResponse r;
-     read(buf, &r);
-     printf("olha o path %s\n", r.path);
-
-     char response[100];
-     respond(&r, response);
-
-    /* sending message back */ 
-    //char ooi[200] =  "HTTP/1.1 404 Not Found\r\n\n";
-    if(send(ns, response, sizeof(response),0) < 0) {
-      printf("err sending");
-      exit(7);
-    }
-    printf("look at response => %s\n",response);
-    //printf("dps\n");
-    //memset(buf,0,strlen(buf));
-
+  
+  /* http handling starts here */
+  listen_http(ns);
 
   close(ns);
   close(s);
+  }
+
 }
