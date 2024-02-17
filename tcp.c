@@ -6,10 +6,11 @@
 #include<arpa/inet.h>
 #include<string.h>
 #include"http_server/http.c"
+#include "http_server/http.h"
+#include<pthread.h>
 
 void listen_server(char* host, int port){
 
- while(1){
   int s;   /// socket
   int ns; // socket connected to client
   int namelen; // length of client name 
@@ -45,22 +46,21 @@ void listen_server(char* host, int port){
 
   /* accepting connection */
   
-  namelen = sizeof(client);
-  if((ns = accept(s, (struct sockaddr*)&client, &namelen)) == -1){
-    printf("err in accept");
-    exit(5);
-  }else {
-
-    char str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &client.sin_addr, str, INET_ADDRSTRLEN);
-    printf("%s has connected\n", str);
-  }
-  
-  /* http handling starts here */
-  listen_http(ns);
-
-  close(ns);
+  while(1){
+    namelen = sizeof(client);
+    if((ns = accept(s, (struct sockaddr*)&client, &namelen)) == -1){
+      printf("err in accept");
+      exit(5);
+    }else {
+      char str[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, &client.sin_addr, str, INET_ADDRSTRLEN);
+      printf("%s has connected\n", str);
+    }
+    /* http handling starts here */
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL, &listen_http, ns);
+ } 
   close(s);
-  }
+  close(ns);
 
 }
